@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodo Dash 3D - Més Monedes</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0b0c10;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #66fcf1;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+        #top-right-menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            background: rgba(31, 40, 51, 0.9);
+            border: 2px solid #66fcf1;
+            color: #66fcf1;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+            transition: 0.2s;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #66fcf1;
+            color: #0b0c10;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #c5c6c7;
+            font-size: 16px;
+            text-align: center;
+            background: rgba(31, 40, 51, 0.8);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #45a29e;
+            pointer-events: none;
+        }
+        #credits {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #66fcf1;
+            font-size: 14px;
+            text-align: center;
+            background: rgba(11, 12, 16, 0.9);
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid #66fcf1;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        #credits:hover {
+            background: #66fcf1;
+            color: #0b0c10;
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff5252;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+            display: none;
+            text-align: center;
+        }
+        #game-over span {
+            font-size: 20px;
+            color: white;
+            display: block;
+            margin-top: 10px;
+        }
+        /* Modal de la Botiga */
+        #shop-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            background: rgba(11, 12, 16, 0.95);
+            border: 2px solid #66fcf1;
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            display: none;
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.3);
+            z-index: 10;
+        }
+        #shop-modal h2 {
+            margin-top: 0;
+            color: #66fcf1;
+            text-align: center;
+        }
+        .shop-section {
+            margin-bottom: 15px;
+        }
+        .shop-section h3 {
+            font-size: 16px;
+            color: #45a29e;
+            border-bottom: 1px solid #45a29e;
+            padding-bottom: 4px;
+        }
+        .shop-items {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .shop-card {
+            background: #1f2833;
+            border: 1px solid #45a29e;
+            border-radius: 6px;
+            padding: 10px;
+            width: 120px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .shop-card:hover {
+            border-color: #66fcf1;
+        }
+        .shop-card.selected {
+            border-color: #f1c40f;
+            background: #27384c;
+        }
+        .close-shop {
+            display: block;
+            margin: 20px auto 0 auto;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        Score: <span id="score">0</span><br>
+        Coins: <span id="coins">0</span>
+    </div>
+    
+    <div id="top-right-menu">
+        <button class="btn" id="btn-shop">Shop</button>
+        <select id="lang-selector" class="btn">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="ca">Català</option>
+            <option value="fr">Français</option>
+        </select>
+    </div>
+
+    <div id="instructions">Use Space or Up Arrow to Jump! Avoid obstacles & collect coins!</div>
+    <a id="credits" href="https://github.com/flaixg" target="_blank">Created by flaixg (github.com/flaixg)</a>
+
+    <div id="game-over">
+        GAME OVER
+        <span id="restart-text">Press R to Restart</span>
+    </div>
+
+    <!-- Finestra Modal Botiga -->
+    <div id="shop-modal">
+        <h2 id="shop-title">Dodo Shop</h2>
+        <div class="shop-section">
+            <h3 id="shop-skins-title">Skins / Characters</h3>
+            <div class="shop-items" id="skins-container"></div>
+        </div>
+        <div class="shop-section">
+            <h3 id="shop-maps-title">Maps / Themes</h3>
+            <div class="shop-items" id="maps-container"></div>
+        </div>
+        <button class="btn close-shop" id="btn-close-shop">Close / Tornar</button>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // --- SISTEMA DE DADES I GUARDAT (LocalStorage) ---
+        let playerData = JSON.parse(localStorage.getItem('dodo_save_data')) || {
+            coins: 50,
+            unlockedSkins: ['cyan'],
+            currentSkin: 'cyan',
+            unlockedMaps: ['classic'],
+            currentMap: 'classic'
+        };
+
+        function saveGame() {
+            localStorage.setItem('dodo_save_data', JSON.stringify(playerData));
+        }
+
+        // --- DEFINICIÓ DE SKINS I MAPES ---
+        const skins = {
+            cyan: { name: 'Cyber Cyan', color: 0x66fcf1, price: 0 },
+            gold: { name: 'Golden Dodo', color: 0xf1c40f, price: 30 },
+            fire: { name: 'Magma Red', color: 0xff5252, price: 50 },
+            matrix: { name: 'Matrix Green', color: 0x2ecc71, price: 80 }
+        };
+
+        const maps = {
+            classic: { name: 'Classic Dark', bg: 0x0b0c10, track: 0x1f2833, price: 0 },
+            neon: { name: 'Neon Purple', bg: 0x11071f, track: 0x4a154b, price: 40 },
+            sunset: { name: 'Sunset Orange', bg: 0x1f0d0a, track: 0xd35400, price: 60 }
+        };
+
+        // --- TRADUCCIONS ---
+        const translations = {
+            en: {
+                score: "Score",
+                coins: "Coins",
+                instructions: "Lots of coins! Collect them easily and unlock items!",
+                gameOver: "GAME OVER",
+                restart: "Press R to Restart",
+                credits: "Created by flaixg (github.com/flaixg)",
+                shop: "Shop",
+                shopTitle: "Dodo Shop",
+                skinsTitle: "Characters / Skins",
+                mapsTitle: "Maps / Themes",
+                close: "Close Shop",
+                buy: "Buy",
+                select: "Select",
+                selected: "Equipped"
+            },
+            es: {
+                score: "Puntuación",
+                coins: "Monedas",
+                instructions: "¡Muchas monedas! ¡Recógelas fácilmente y desbloquea objetos!",
+                gameOver: "FIN DEL JUEGO",
+                restart: "Pulsa R para reiniciar",
+                credits: "Creado por flaixg (github.com/flaixg)",
+                shop: "Tienda",
+                shopTitle: "Tienda Dodo",
+                skinsTitle: "Personajes / Skins",
+                mapsTitle: "Mapas / Temas",
+                close: "Cerrar Tienda",
+                buy: "Comprar",
+                select: "Seleccionar",
+                selected: "Equipado"
+            },
+            ca: {
+                score: "Puntuació",
+                coins: "Monedes",
+                instructions: "Moltes monedes! Recull-les fàcilment i desbloqueja objectes!",
+                gameOver: "FI DEL JOC",
+                restart: "Prem R per reiniciar",
+                credits: "Creat per flaixg (github.com/flaixg)",
+                shop: "Botiga",
+                shopTitle: "Botiga Dodo",
+                skinsTitle: "Personatges / Skins",
+                mapsTitle: "Mapes / Temes",
+                close: "Tancar Botiga",
+                buy: "Comprar",
+                select: "Seleccionar",
+                selected: "Equipat"
+            },
+            fr: {
+                score: "Score",
+                coins: "Pièces",
+                instructions: "Plein de pièces! Ramassez-les facilement et débloquez des objets!",
+                gameOver: "FIN DE PARTIE",
+                restart: "Appuyez sur R pour recommencer",
+                credits: "Créé par flaixg (github.com/flaixg)",
+                shop: "Boutique",
+                shopTitle: "Boutique Dodo",
+                skinsTitle: "Personnages / Skins",
+                mapsTitle: "Cartes / Thèmes",
+                close: "Fermer",
+                buy: "Acheter",
+                select: "Sélectionner",
+                selected: "Équipé"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('instructions').innerText = translations[lang].instructions;
+            document.getElementById('restart-text').innerText = translations[lang].restart;
+            document.getElementById('credits').innerText = translations[lang].credits;
+            document.getElementById('btn-shop').innerText = translations[lang].shop;
+            document.getElementById('shop-title').innerText = translations[lang].shopTitle;
+            document.getElementById('shop-skins-title').innerText = translations[lang].skinsTitle;
+            document.getElementById('shop-maps-title').innerText = translations[lang].mapsTitle;
+            document.getElementById('btn-close-shop').innerText = translations[lang].close;
+            updateUIStats();
+            renderShop();
+        }
+
+        function updateUIStats() {
+            const scoreNum = Math.floor(score);
+            document.getElementById('ui').innerHTML = `
+                ${translations[currentLang].score}: <span id="score">${scoreNum}</span><br>
+                ${translations[currentLang].coins}: <span id="coins">${playerData.coins}</span>
+            `;
+        }
+
+        document.getElementById('lang-selector').addEventListener('change', (e) => {
+            updateLanguage(e.target.value);
+        });
+
+        // --- BOTIGA ---
+        const shopModal = document.getElementById('shop-modal');
+        document.getElementById('btn-shop').addEventListener('click', () => {
+            isShopOpen = true;
+            shopModal.style.display = 'block';
+            renderShop();
+        });
+        document.getElementById('btn-close-shop').addEventListener('click', () => {
+            isShopOpen = false;
+            shopModal.style.display = 'none';
+        });
+
+        let isShopOpen = false;
+
+        function renderShop() {
+            const skinsContainer = document.getElementById('skins-container');
+            skinsContainer.innerHTML = '';
+            for (let key in skins) {
+                const skin = skins[key];
+                const isUnlocked = playerData.unlockedSkins.includes(key);
+                const isSelected = playerData.currentSkin === key;
+                
+                const card = document.createElement('div');
+                card.className = `shop-card ${isSelected ? 'selected' : ''}`;
+                card.innerHTML = `
+                    <div style="font-weight:bold; color:#fff;">${skin.name}</div>
+                    <div style="font-size:12px; margin: 5px 0; color:${isUnlocked ? '#66fcf1' : '#f1c40f'}">
+                        ${isUnlocked ? (isSelected ? translations[currentLang].selected : translations[currentLang].select) : skin.price + ' 🪙'}
+                    </div>
+                `;
+                card.onclick = () => {
+                    if (isUnlocked) {
+                        playerData.currentSkin = key;
+                        playerMat.color.setHex(skin.color);
+                        saveGame();
+                        renderShop();
+                    } else if (playerData.coins >= skin.price) {
+                        playerData.coins -= skin.price;
+                        playerData.unlockedSkins.push(key);
+                        playerData.currentSkin = key;
+                        playerMat.color.setHex(skin.color);
+                        saveGame();
+                        renderShop();
+                        updateUIStats();
+                    }
+                };
+                skinsContainer.appendChild(card);
+            }
+
+            const mapsContainer = document.getElementById('maps-container');
+            mapsContainer.innerHTML = '';
+            for (let key in maps) {
+                const map = maps[key];
+                const isUnlocked = playerData.unlockedMaps.includes(key);
+                const isSelected = playerData.currentMap === key;
+
+                const card = document.createElement('div');
+                card.className = `shop-card ${isSelected ? 'selected' : ''}`;
+                card.innerHTML = `
+                    <div style="font-weight:bold; color:#fff;">${map.name}</div>
+                    <div style="font-size:12px; margin: 5px 0; color:${isUnlocked ? '#66fcf1' : '#f1c40f'}">
+                        ${isUnlocked ? (isSelected ? translations[currentLang].selected : translations[currentLang].select) : map.price + ' 🪙'}
+                    </div>
+                `;
+                card.onclick = () => {
+                    if (isUnlocked) {
+                        playerData.currentMap = key;
+                        applyMapTheme(key);
+                        saveGame();
+                        renderShop();
+                    } else if (playerData.coins >= map.price) {
+                        playerData.coins -= map.price;
+                        playerData.unlockedMaps.push(key);
+                        playerData.currentMap = key;
+                        applyMapTheme(key);
+                        saveGame();
+                        renderShop();
+                        updateUIStats();
+                    }
+                };
+                mapsContainer.appendChild(card);
+            }
+        }
+
+        function applyMapTheme(mapName) {
+            const map = maps[mapName];
+            scene.background.setHex(map.bg);
+            scene.fog.color.setHex(map.bg);
+            trackMat.color.setHex(map.track);
+        }
+
+        // --- ESCENA 3D ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0c10);
+        scene.fog = new THREE.FogExp2(0x0b0c10, 0.025);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0x66fcf1, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const trackRadius = 5;
+        const trackGeo = new THREE.CylinderGeometry(trackRadius, trackRadius, 200, 32, 32, true);
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x1f2833, roughness: 0.4 });
+        const track = new THREE.Mesh(trackGeo, trackMat);
+        track.rotation.z = Math.PI / 2;
+        track.position.z = -100;
+        scene.add(track);
+
+        const playerGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        const playerMat = new THREE.MeshStandardMaterial({ 
+            color: skins[playerData.currentSkin].color, 
+            roughness: 0.2, 
+            metalness: 0.8 
+        });
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        scene.add(player);
+
+        applyMapTheme(playerData.currentMap);
+
+        let playerAngle = 0;
+        let playerY = 1.2;
+        let verticalVelocity = 0;
+        const gravity = 0.015;
+        const jumpForce = 0.3;
+        let isJumping = false;
+        let score = 0;
+        let isGameOver = false;
+        const gameSpeed = 0.8;
+        let gameTime = 0; // Per controlar la dificultat progressiva
+
+        const obstacles = [];
+        const obstacleGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+        const obstacleMat = new THREE.MeshStandardMaterial({ color: 0xff5252, roughness: 0.3 });
+
+        const collectibles = [];
+        const coinGeo = new THREE.DodecahedronGeometry(0.45);
+        const coinMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.2, metalness: 0.9 });
+
+        function spawnEntity() {
+            if (isGameOver || isShopOpen) return;
+            
+            gameTime += 1;
+            const randomAngle = Math.random() * Math.PI * 2;
+
+            // AL PRINCIPI: Moltes més monedes i quasi zero obstacles per facilitar-ho
+            let coinChance = gameTime < 15 ? 0.8 : 0.5;
+
+            if (Math.random() > coinChance && gameTime > 5) {
+                // Generar obstacle
+                const obstacle = new THREE.Mesh(obstacleGeo, obstacleMat);
+                obstacle.userData = { angle: randomAngle, z: -150 };
+                scene.add(obstacle);
+                obstacles.push(obstacle);
+            } else {
+                // Generar linia de monedes (fàcils de recollir)
+                for (let c = 0; c < 3; c++) {
+                    const coin = new THREE.Mesh(coinGeo, coinMat);
+                    coin.userData = { angle: randomAngle, z: -150 - (c * 2) };
+                    scene.add(coin);
+                    collectibles.push(coin);
+                }
+            }
+        }
+
+        setInterval(() => {
+            if (!isGameOver && !isShopOpen) spawnEntity();
+        }, 700); // Generació més ràpida
+
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            if (isShopOpen) return;
+            keys[e.code] = true;
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && !isJumping && !isGameOver) {
+                verticalVelocity = jumpForce;
+                isJumping = true;
+            }
+            if (e.code === 'KeyR' && isGameOver) {
+                restartGame();
+            }
+        });
+        window.addEventListener('keyup', (e) => keys[e.code] = false);
+
+        function restartGame() {
+            isGameOver = false;
+            score = 0;
+            gameTime = 0;
+            playerAngle = 0;
+            verticalVelocity = 0;
+            isJumping = false;
+            document.getElementById('game-over').style.display = 'none';
+            obstacles.forEach(obs => scene.remove(obs));
+            collectibles.forEach(col => scene.remove(col));
+            obstacles.length = 0;
+            collectibles.length = 0;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!isGameOver && !isShopOpen) {
+                if (keys['ArrowLeft'] || keys['KeyA']) playerAngle += 0.04;
+                if (keys['ArrowRight'] || keys['KeyD']) playerAngle -= 0.04;
+
+                playerY += verticalVelocity;
+                verticalVelocity -= gravity;
+
+                if (playerY <= 1.2) {
+                    playerY = 1.2;
+                    verticalVelocity = 0;
+                    isJumping = false;
+                }
+
+                player.position.x = Math.cos(playerAngle) * trackRadius;
+                player.position.y = Math.sin(playerAngle) * trackRadius;
+                player.rotation.z = playerAngle;
+
+                score += 0.1;
+                updateUIStats();
+
+                // Actualitzar obstacles
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    obs.userData.z += gameSpeed;
+                    
+                    obs.position.x = Math.cos(obs.userData.angle) * trackRadius;
+                    obs.position.y = Math.sin(obs.userData.angle) * trackRadius;
+                    obs.position.z = obs.userData.z;
+
+                    const angleDiff = Math.abs(playerAngle - obs.userData.angle) % (Math.PI * 2);
+                    const normalizedAngleDiff = Math.min(angleDiff, Math.PI * 2 - angleDiff);
+
+                    if (obs.userData.z > -2 && obs.userData.z < 2 && normalizedAngleDiff < 0.25 && playerY < 2.0) {
+                        isGameOver = true;
+                        document.getElementById('game-over').style.display = 'block';
+                        saveGame();
+                    }
+
+                    if (obs.userData.z > 5) {
+                        scene.remove(obs);
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                // Actualitzar monedes (Col·lisió més àmplia per facilitar la recollida)
+                for (let i = collectibles.length - 1; i >= 0; i--) {
+                    const col = collectibles[i];
+                    col.userData.z += gameSpeed;
+                    col.rotation.y += 0.05;
+                    
+                    col.position.x = Math.cos(col.userData.angle) * trackRadius;
+                    col.position.y = Math.sin(col.userData.angle) * trackRadius;
+                    col.position.z = col.userData.z;
+
+                    const angleDiff = Math.abs(playerAngle - col.userData.angle) % (Math.PI * 2);
+                    const normalizedAngleDiff = Math.min(angleDiff, Math.PI * 2 - angleDiff);
+
+                    if (col.userData.z > -2 && col.userData.z < 2 && normalizedAngleDiff < 0.4 && playerY < 2.5) {
+                        playerData.coins += 1;
+                        scene.remove(col);
+                        collectibles.splice(i, 1);
+                        updateUIStats();
+                        saveGame();
+                    }
+
+                    if (col.userData.z > 5) {
+                        scene.remove(col);
+                        collectibles.splice(i, 1);
+                    }
+                }
+
+                track.rotation.x += 0.02;
+            }
+
+            camera.position.set(0, -2, 5);
+            camera.lookAt(0, 0, -10);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
